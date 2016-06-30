@@ -8,19 +8,20 @@ typedef struct{
 }ngx_http_mytest_conf_t;
 
 
-typedef struct{
+/*typedef struct{
 	ngx_http_status_t status;
 	ngx_str_t backendServer;
 }ngx_http_mytest_ctx_t;
+*/
 
 static char * ngx_http_mytest(ngx_conf_t *cf,ngx_command_t *cmd,void *conf);
 static ngx_int_t ngx_http_mytest_handler(ngx_http_request_t *r);
-static void *ngx_http_mytest_create_loc_conf(ngx_conf_t *cf);
-static char *ngx_http_mytest_merge_loc_conf(ngx_conf_t *cf,void *parent,void *child);
-static ngx_int_t mytest_upstream_create_request(ngx_http_request_t *r);
-static ngx_int_t mytest_process_status_line(ngx_http_request_t *r);
-static ngx_int_t mytest_upstream_process_header(ngx_http_request_t *r);
-static void mytest_upstream_finalize_request(ngx_http_request_t *r,ngx_int_t rc);
+//static void *ngx_http_mytest_create_loc_conf(ngx_conf_t *cf);
+//static char *ngx_http_mytest_merge_loc_conf(ngx_conf_t *cf,void *parent,void *child);
+//static ngx_int_t mytest_upstream_create_request(ngx_http_request_t *r);
+//static ngx_int_t mytest_process_status_line(ngx_http_request_t *r);
+//static ngx_int_t mytest_upstream_process_header(ngx_http_request_t *r);
+//static void mytest_upstream_finalize_request(ngx_http_request_t *r,ngx_int_t rc);
 static void mytest_post_handler(ngx_http_request_t *r);
 static ngx_int_t mytest_subrequest_post_handler(ngx_http_request_t *r, void *data, ngx_int_t rc);
 
@@ -46,8 +47,10 @@ static ngx_http_module_t ngx_http_mytest_module_ctx = {
 	NULL,
 	NULL,
 
-	ngx_http_mytest_create_loc_conf,
-	ngx_http_mytest_merge_loc_conf,
+	NULL,
+	NULL
+	//ngx_http_mytest_create_loc_conf,
+	//ngx_http_mytest_merge_loc_conf,
 };
 
 
@@ -71,7 +74,7 @@ ngx_module_t ngx_http_mytest_module = {
 };
 
 
-static ngx_str_t ngx_http_proxy_hide_headers[] = {
+/*static ngx_str_t ngx_http_proxy_hide_headers[] = {
 	ngx_string("Date"),
 	ngx_string("Server"),
 	ngx_string("X-Pad"),
@@ -82,7 +85,7 @@ static ngx_str_t ngx_http_proxy_hide_headers[] = {
 	ngx_string("X-Accel-Charset"),
 	ngx_null_string
 };
-
+*/
 static char *
 ngx_http_mytest(ngx_conf_t *cf,ngx_command_t *cmd,void *conf)
 {
@@ -98,7 +101,6 @@ ngx_http_mytest(ngx_conf_t *cf,ngx_command_t *cmd,void *conf)
 static ngx_int_t 
 ngx_http_mytest_handler(ngx_http_request_t *r)
 {
-
 
 
 	ngx_http_mytest_ctx_t *myctx = ngx_http_get_module_ctx(r,ngx_http_mytest_module);
@@ -122,7 +124,7 @@ ngx_http_mytest_handler(ngx_http_request_t *r)
 	ngx_str_t sub_location;
 	sub_location.len = sub_prefix.len + r ->args.len;
 	sub_location.data = ngx_palloc(r ->pool,sub_location.len);
-	ngx_snpirntf(sub_location.data,sub_location.len,"%V%V",&sub_prefix,&r ->args);
+	ngx_snprintf(sub_location.data,sub_location.len,"%V%V",&sub_prefix,&r ->args);
 
 	ngx_http_request_t *sr;
 	ngx_int_t rc = ngx_http_subrequest(r,&sub_location,NULL,&sr,psr,NGX_HTTP_SUBREQUEST_IN_MEMORY);
@@ -238,6 +240,7 @@ ngx_http_mytest_handler(ngx_http_request_t *r)
 }
 
 
+/*
 static void *ngx_http_mytest_create_loc_conf(ngx_conf_t *cf)
 {
 	ngx_http_mytest_conf_t *mycf;
@@ -467,7 +470,7 @@ mytest_upstream_finalize_request(ngx_http_request_t *r,ngx_int_t rc)
 	ngx_log_error(NGX_LOG_DEBUG,r ->connection ->log,0,
 			"mytest_upstream_finalize_request");
 }
-
+*/
 
 static ngx_int_t
 mytest_subrequest_post_handler(ngx_http_request_t *r, void *data, ngx_int_t rc)
@@ -481,10 +484,10 @@ mytest_subrequest_post_handler(ngx_http_request_t *r, void *data, ngx_int_t rc)
 		int flag = 0;
 		ngx_buf_t * pRecvBuf = &r ->upstream ->buffer;
 
-		for(;pRecvBuf ->pos != pRecvBUf ->last;pRecvBuf++){
+		for(;pRecvBuf ->pos != pRecvBuf ->last;pRecvBuf ->pos++){
 			if(*pRecvBuf ->pos == ',' || *pRecvBuf ->pos == '\"'){
 				if(flag > 0){
-					myctx ->stock[flag - 1].len = pRecvBuf ->pos - myctx ->stock[flag - 1];
+					myctx ->stock[flag - 1].len = pRecvBuf ->pos - myctx ->stock[flag - 1].data;
 				}
 				flag++;
 				myctx ->stock[flag - 1].data = pRecvBuf ->pos + 1;
@@ -494,19 +497,19 @@ mytest_subrequest_post_handler(ngx_http_request_t *r, void *data, ngx_int_t rc)
 				break;
 			}
 		}
-
-
-		pr ->write_event_handler = mytest_post_handler;
-
-		return NGX_OK;
 	}
+
+
+	pr ->write_event_handler = mytest_post_handler;
+	return NGX_OK;
 }
+
 
 
 static void
 mytest_post_handler(ngx_http_request_t *r)
 {
-	if(r ->handlers_out.status != NGX_HTTP_OK){
+	if(r ->headers_out.status != NGX_HTTP_OK){
 		ngx_http_finalize_request(r,r ->headers_out.status);
 		return;
 	}
@@ -516,7 +519,7 @@ mytest_post_handler(ngx_http_request_t *r)
 	ngx_str_t output_format = ngx_string("stock[%V],Today current price: %V, volumn: %V");
 
 	int bodylen = output_format.len + myctx ->stock[0].len +
-		myctx ->stock[1].len + myctx[4].len - 6;
+		myctx ->stock[1].len + myctx ->stock[4].len - 6;
 	r ->headers_out.content_length_n = bodylen;
 
 	ngx_buf_t *b = ngx_create_temp_buf(r ->pool,bodylen);
