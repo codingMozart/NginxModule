@@ -1,4 +1,4 @@
-#define NGX_CONFIGURE " --add-module=src/addon --prefix=/usr/local"
+#define NGX_CONFIGURE " --add-module=src/addon/myfilter"
 
 #ifndef NGX_COMPILER
 #define NGX_COMPILER  "gcc 4.9.2 (Debian 4.9.2-10) "
@@ -329,7 +329,7 @@
 
 
 #ifndef NGX_PREFIX
-#define NGX_PREFIX  "/usr/local/"
+#define NGX_PREFIX  "/usr/local/nginx/"
 #endif
 
 
