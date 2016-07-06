@@ -29,7 +29,7 @@ static ngx_command_t ngx_http_myfilter_commands[]={
 	ngx_conf_set_flag_slot,
 	NGX_HTTP_LOC_CONF_OFFSET,
 	offsetof(ngx_http_myfilter_conf_t,enable),
-	NULL},
+	NULL,},
 
 	ngx_null_command
 
@@ -103,7 +103,7 @@ static ngx_int_t ngx_http_myfilter_header_filter(ngx_http_request_t *r)
 	ngx_http_myfilter_ctx_t *ctx;
 	ngx_http_myfilter_conf_t *conf;
 
-	if(r ->headers_out.status != NGX_OK){
+	if(r ->headers_out.status != NGX_HTTP_OK){		//bug 1
 		return ngx_http_next_header_filter(r);
 	}
 
